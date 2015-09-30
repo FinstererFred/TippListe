@@ -1,7 +1,9 @@
 <?php
 
-$feed_url = '';
+// php file to get game dates from feed, as they are not all known at the start of the season
+// usage: http://localhost/getDates.php?from=gameday1&to=gameday2
 
+include ('feedUrls.php');
 include('db.class.php');
 
 $from = (int)$_GET['from'];
@@ -9,7 +11,7 @@ $to = (int)$_GET['to'];
 
 for($i = $from; $i <= $to; $i++)
 {
-	$url = $feed_url.$i."_onl1.json";
+	$url = $feed1_url.$i."_onl1.json";
 
 	$html = get_data($url);
 
