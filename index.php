@@ -1,7 +1,7 @@
 <?php
 
-	include('db.class.php');
-	include('proxy.php');
+	include("php/db.class.php");
+	include("php/proxy.php");
 
 	$jokerTipp = true;
 
