@@ -1,12 +1,11 @@
-<?php
+<?php 
 
-	include("php/db.class.php");
-	include("php/proxy.php");
-
-	$jokerTipp = true;
+	include('db.class.php');
+	include('proxy.php');
 
 	$test = get_data($url);
 	$season = 2015;
+	$doPrevPoints = false;
 	$xml = new SimpleXMLElement($test);
 	foreach($xml->fixture as $fixture)
 	{
@@ -15,7 +14,7 @@
 			$actSpieltag = $fixture['round'];
 			break;
 		}
-	}
+	}	
 
 	checkResults($actSpieltag, $season);
 
@@ -32,7 +31,8 @@
 		$result = $result[0]['cnt'];
 		if ($result > 0) {
 			updateSpieltag($prevSpieltag);
-		}
+			$doPrevPoints = true;
+		} 
 
 	}
 
@@ -67,7 +67,7 @@
 		th img { width: 25px; height: 25px;}
 		th img:first-child { margin-right:2px;}
 		th { padding:10px 15px; white-space: nowrap; cursor: pointer;}
-		th.spieltag { text-align: left}
+		th.spieltag { text-align: left}	
 		td { padding:10px; text-align: center; white-space: nowrap;}
 		td input { width: 15px; border:0px;text-align: center}
 		td.name{ text-align: left}
@@ -77,7 +77,7 @@
 		.rot { color:red;}
 		.rot input { color:red;}
 		.tipTR:hover { background-color: #cdcdcd}
-
+		
 		.tipTR { display: none }
 		#div<?=$actSpieltag?> .tipTR { display: table-row; }
 
@@ -105,7 +105,7 @@
 		/* #tableList { position: absolute; top:0x; left:30px; z-index: 0 } */
 		#tableList { width: 430px; display: inline-block; position: relative; top:-12px;}
 		#tableList .vTeam { display: inline-block; width: 80px; margin-right: 5px }
-
+		
 		.pointsName { text-align: left; }
 
 		#tableInjured { display: inline-block; position: relative; top:0px; width: 529px; margin-right:0px;    vertical-align: top;}
@@ -118,9 +118,9 @@
 	</style>
 </head>
 <body>
-
+	
 	<div class="headerDiv">
-
+		
 		<table id="points"><tr><th>Name</th> <th>Punkte</th> <th>Platz</th> <th>&euro;</th></tr></table>
 		<div id="tableList"><div class="tableLink"><a href="http://www.bundesliga.de/de/liga/tabelle/" target="_blank">zur Bl. Tabelle</a></div></div>
 		<table id="tableInjured"><tr><th>Art</th><th>Name</th><th>News</th><th>fehlt seit</th></tr></table>
@@ -170,7 +170,7 @@
 
 	$sql = "SELECT t.*,u.name from tips t left join user u on t.user = u.id where t.season = :season";
 		$stmt = $db->prepare($sql);
-
+		
 		$stmt->bindParam(':season', $season, PDO::PARAM_INT);
 		$stmt->execute();
 
@@ -193,12 +193,12 @@
 		}
 		$userJS .= '];';
 
-
+	
 
 	$sql = "SELECT * from rounds where season = :season";
 		$stmt = $db->prepare($sql);
 		$stmt->bindParam(':season', $season, PDO::PARAM_INT);
-
+		
 		$stmt->execute();
 
 		$rounds = array();
@@ -213,7 +213,7 @@
 		if($spieltag < $knownRound) {
 			$farbe = 0;
 		}
-
+		
 		$temptip = array();
 		$spieldatum = -1;
 
@@ -231,7 +231,7 @@
 					$farbe++;
 					$datumOld=$locdate;
 				}
-
+				
 				$events[$key]['hgfarbe'] = $farbe;
 			}
 		}
@@ -249,13 +249,13 @@
 				$erg1 = ($event['erg1'] != -1) ?  $event['erg1'] : 'x';
 				$erg2 = ($event['erg2'] != -1) ?  $event['erg2'] : 'x';
 				$erg .= '<td>'.$erg1.' - '.$erg2.'</td><td></td>';
-
+		
 				foreach ($users as $key => $value) {
 
 					if (!isset($temptip[$key])) {
 						$temptip[$key] = '';
 					}
-
+					
 					if (!isset($temptip[$key]['content'])) {
 						$temptip[$key]['content'] = '';
 					}
@@ -270,28 +270,21 @@
 
 					$rot = ( isset($rounds[ $spieltag ][ $key ]['rot']) && $rounds[ $spieltag ][ $key ]['rot'] == $i) ? 'class="tipTD rot"' : 'class="tipTD"';
 
-					if($jokerTipp) {
-						$rotKnopf = '<div class="rotKnopf"></div>';
-					} else {
-						$rotKnopf = '';
-						$rot = 'class="tipTD"';
-					}
-
 					if ( isset($tips[ $spieltag ][$key][ $event['eventId'] ]) ) {
 						$_tip = $tips[ $spieltag ][$key][ $event['eventId'] ];
-
+					
 						if($spieltag < $actSpieltag) {
 							$temptip[ $key ]['content'] .= '<td  data-spiel="'.$i.'" '.$rot.' data-eventId="'.$event['eventId'].'">'.$_tip['tip1'].' - '.$_tip['tip2'].'</td><td td class="matchpoints" data-spiel="'.$i.'">'.$_tip['punkte'].'</td>';
 						} else {
-							$temptip[ $key ]['content'] .= '<td  data-spiel="'.$i.'" '.$rot.' data-eventId="'.$event['eventId'].'">'.$rotKnopf.'<input type="tel" value="'.$_tip['tip1'].'" /> - <input type="tel" value="'.$_tip['tip2'].'" /></td><td class="matchpoints" data-spiel="'.$i.'">0</td>';
+							$temptip[ $key ]['content'] .= '<td  data-spiel="'.$i.'" '.$rot.' data-eventId="'.$event['eventId'].'"><div class="rotKnopf"></div><input type="tel" value="'.$_tip['tip1'].'" /> - <input type="tel" value="'.$_tip['tip2'].'" /></td><td class="matchpoints" data-spiel="'.$i.'">0</td>';			
 						}
 
 					} else {
-
+						
 						if ($spieltag >= $actSpieltag) {
-							$temptip[ $key ]['content'] .= '<td data-spiel="'.$i.'" '.$rot.' data-eventId="'.$event['eventId'].'">'.$rotKnopf.'</div><input type="tel" value="x" /> - <input type="tel" value="x" /></td><td class="matchpoints" data-spiel="'.$i.'">0</td>';
+							$temptip[ $key ]['content'] .= '<td data-spiel="'.$i.'" '.$rot.' data-eventId="'.$event['eventId'].'"><div class="rotKnopf"></div><input type="tel" value="x" /> - <input type="tel" value="x" /></td><td class="matchpoints" data-spiel="'.$i.'">0</td>';	
 						} else {
-							$temptip[ $key ]['content'] .= '<td data-spiel="'.$i.'" '.$rot.' data-eventId="'.$event['eventId'].'">x - x</td><td class="matchpoints" data-spiel="'.$i.'">0</td>';
+							$temptip[ $key ]['content'] .= '<td data-spiel="'.$i.'" '.$rot.' data-eventId="'.$event['eventId'].'">x - x</td><td class="matchpoints" data-spiel="'.$i.'">0</td>';	
 						}
 					}
 
@@ -300,7 +293,7 @@
 				}
 
 				$i++;
-
+				
 			}
 		}
 
@@ -310,7 +303,7 @@
 			echo "<tr class='tipTR' data-user='".$key."'>";
 			echo "<td class='name'>".$users[$key]."</td>";
 			echo $value['content']."";
-
+			
 			$bezahlt = ($value['bezahlt']  == 1) ? ' checked="checked" disabled="disabled"' : '';
 
 			echo "<td><input type='checkbox' ".$bezahlt."></td><td class='punkte'>".$value['points']."</td></tr>";
@@ -330,6 +323,16 @@
 
 	<script type="text/javascript" src="js/jquery-2.1.4.min.js"></script>
 	<script type="text/javascript" src="js/functions.js?new=29"></script>
+
+	<script>
+		$(function () {
+			<?php 
+				if($doPrevPoints == true) {
+					echo "var spPrev = new Spieltag(".($actSpieltag-1).");";
+				}
+			?>
+		});
+	</script>
 
 </body>
 </html>
